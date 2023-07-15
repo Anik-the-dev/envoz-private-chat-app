@@ -4,7 +4,9 @@
   "description": "Private Chat App for Envoz Corporation!",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js",
+    "prod": "NODE_ENV=production node app.js"
   },
   "author": "Anik Acharjee, Software Engineer",
   "license": "ISC",
