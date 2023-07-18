@@ -8,33 +8,61 @@ function getLogin(req, res, next) {
 }
 
 //  do login
-// validate user( by user input) if pass: generate token, save to cookie, send the cookie, inbox render
+// check user( by user input) if pass: generate token, save to cookie, send the cookie, inbox render
 async function login(req, res, next) {
-  const user = await People.findOne({
-    $or: [{ email: res.body.username }, { mobile: res.body.username }],
-  });
-  if (user && user._id) {
-    const validatedPassword = await bcrypt.compare(
-      res.body.password,
-      user.password
-    );
-    if (validatedPassword) {
-      // userdata
-      const payload = {
-        name: user.name,
-        email: user.email,
-        mobile: user.mobile,
-        role: "user",
-      };
-      // generate token
-      const token = jwt.sign(payload, process.env.TOKEN_KEY_SECRET, {
-        expiresIn: "24hr",
-      });
+  console.log("req", req.body.username);
+  try {
+    const user = await People.findOne({
+      $or: [{ email: req.body.username }, { mobile: req.body.username }],
+    });
+    if (user && user._id) {
+      const validatedPassword = await bcrypt.compare(
+        req.body.password,
+        user.password
+      );
+      if (validatedPassword) {
+        // userdata
+        const payload = {
+          name: user.name,
+          email: user.email,
+          mobile: user.mobile,
+          role: "user",
+        };
+        // generate token
+        const token = jwt.sign(payload, process.env.TOKEN_KEY_SECRET, {
+          expiresIn: process.env.JWT_EXPIRY,
+        });
 
-      // set cookie and send cookie
+        // set cookie and send cookie
+        res.cookie(process.env.COOKIE_NAME, token, {
+          signed: true,
+          httpOnly: true,
+          maxAge: process.env.JWT_EXPIRY,
+        });
+        // Set loggedIn user locals identifier
+        res.locals.loggedInUser = payload;
+        // render inbox page
+        res.render("inbox");
+      } else {
+        throw createError("Login failed! Please try again.");
+      }
+    } else {
+      throw createError("Login failed! Please try again.");
     }
+  } catch (error) {
+    res.render("index", {
+      data: {
+        username: req.body.username,
+      },
+      errors: {
+        common: {
+          msg: error.message,
+        },
+      },
+    });
   }
 }
 module.exports = {
   getLogin,
+  login,
 };
